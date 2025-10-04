@@ -126,4 +126,44 @@ class CollidedCollect:
 
 @CollectRegister.register("random")
 class RandomCollect:
-    def run(self): print("Random collect")
+    def __init__(self , env:AudioNavRLEnv , config:Config):
+        self.env = env
+        self.sim: SoundEventNavSim = env._env._sim
+        self.save_data_struct = config.DATA_STRUCT
+        self.save_data_dir = config.DATA_DIR
+        self.save_path_img = config.IMG_DIR
+        self.save_path_type = config.IMG_TYPE
+    def collect(self):
+        for _ in range(self.env._env.number_of_episodes):
+            self.save_data = copy.deepcopy(self.save_data_struct)
+            greedy_path_point = []
+            collided_path_point = []
+            obs = self.env.reset()
+            
+            done = False
+            self.save(obs=obs,done=done)
+            self.save(sound_id = self.env._env.current_episode.sound_id)
+            greedy_path_point.append(self.sim.get_agent_state().position)
+            while len(self.save_data['done']) < 50 and not done:
+                action = random.choice([1,2,3])
+                obs , reward , done , info = self.env.step(action = action)
+                greedy_path_point.append(self.sim.get_agent_state().position)
+                self.save(obs=obs,reward=reward,done=done,info=info,action_id=action)
+                if done:
+                    break
+            
+            self.save(greedy_map=draw_map(self.env , greedy_path_point))
+            self.save(collided_map=draw_map(self.env , collided_path_point))
+            self.save(greedy_path_point=greedy_path_point)
+            self.save(collided_path_point=collided_path_point)
+            self.store(self.env._env.current_episode.scene_id , self.env._env.current_episode)
+            
+    def save(self , **kwargs):
+        for key , value in kwargs.items():
+            self.save_data[key].append(value)
+    def store(self, scene , id):
+        os.makedirs(f"{self.save_data_dir}/{scene[-15:-4]}",exist_ok=True)
+        
+        with open(f"{self.save_data_dir}/{scene[-15:-4]}/{id.episode_id}.pkl" , 'wb' ) as f:
+            pickle.dump(self.save_data , f)
+        self.save_data = None

@@ -281,8 +281,8 @@ class ShardedPTDataset(Dataset):
         visual = data["visuals"][local_idx]
         audio = data["audios"][local_idx]
         action = data["actions"][local_idx]
-
-        return visual, audio, action
+        angle = data['angles'][local_idx]
+        return visual, audio, action , angle
     
 
 class ShardedPTDatasetOffline(Dataset):

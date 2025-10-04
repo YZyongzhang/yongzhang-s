@@ -11,11 +11,11 @@ if  __name__ == "__main__":
     model = Network().to(device)
     lr = 1e-4
     optimizer = optim.Adam(model.parameters(), lr=lr)
-    save_dir = './experiment/train/ckpt_foundation_add_val_test'
-    os.makedirs('./experiment/train/ckpt_foundation_add_val_test', exist_ok=True)
-    writer = SummaryWriter(log_dir='./experiment/train/foundation_add_val_test')
-    dataset = ShardedPTDataset(shard_pattern="./dataset/pt/foundation/foundation_model_shard_0.pt")
-    val_dataset = ShardedPTDataset(shard_pattern="./dataset/pt/foundation_val/foundation_model_shard_0.pt")
+    save_dir = './experiment/train/v2/ckpt_foundation_add_val_with_audio'
+    os.makedirs('./experiment/train/v2/ckpt_foundation_add_val_with_audio', exist_ok=True)
+    writer = SummaryWriter(log_dir='./experiment/train/v2/foundation_add_val_with_audio')
+    dataset = ShardedPTDataset(shard_pattern="./dataset/pt/v2/foundation_audio_with_angle/foundation_model_shard_*.pt")
+    val_dataset = ShardedPTDataset(shard_pattern="./dataset/pt/v2/foundation_audio_with_angle_val/foundation_model_shard_*.pt")
     trainer = Train(
         model=model,
         Adam=optimizer,

@@ -58,6 +58,20 @@ class Decision(nn.Module):
         x = torch.relu(self.fc1(x))
         x = self.fc2(x)
         return x
+class AnglePredictor(nn.Module):
+    def __init__(self, hidden_dim):
+        super().__init__()
+        self.fc = nn.Sequential(
+            nn.Linear(hidden_dim, 64),
+            nn.ReLU(),
+            nn.Linear(64, 1)
+        )
+
+    def forward(self, x):
+        # x: [batch, seq_len, hidden_dim]
+        # 简单平均池化
+        x = x.mean(dim=1)  # [batch, hidden_dim]
+        return self.fc(x)
     
 class Finnal_model(nn.Module):
     def __init__(self,input_dim , hidden_dim , output_dim):
@@ -85,17 +99,19 @@ class Network(nn.Module):
         # self.mermory = Mermory(input_dim=128,hidden_dim=128)
         self.vote = Vote(input_dim=128)
         self.decision = Decision(input_dim=32,hidden_dim=16,output_dim=4)
+        self.angle_part = AnglePredictor(hidden_dim=128)
         self.finnal = Finnal_model(input_dim = 128 , hidden_dim=32 , output_dim=4)
 
 
     def forward(self,audio , visual):
         visual = visual.permute(0,3, 1, 2)
-        audio = audio.permute(0,3, 1, 2)
-        avencoder= self.vitpartnet(audio , visual)
+        # audio = audio.permute(0,3, 1, 2)
+        avencoder , audio_encode , visual_encoder = self.vitpartnet(audio , visual)
+        angle = self.angle_part(audio_encode)
         attentioned = self.attention(avencoder)
 
         finnal_output = self.finnal(attentioned)
-        return finnal_output
+        return finnal_output , angle
         # return attentioned
     
     def embedding_forward(self , audio ,visual):

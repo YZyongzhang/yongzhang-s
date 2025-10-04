@@ -15,7 +15,7 @@ CONFIG_FILE_SEPARATOR = ","
 # -----------------------------------------------------------------------------
 _C = CN()
 _C.SEED = 0
-_C.BASE_TASK_CONFIG_PATH = "./configs/audiogoal_greedy.yaml" #"./configs/audiogoal_online_test.yaml" 
+_C.BASE_TASK_CONFIG_PATH = "./configs/audiogoal_collided.yaml" #"./configs/audiogoal_online_test.yaml" 
 _C.TASK_CONFIG = CN()  # task_config will be stored as a config node
 _C.CMD_TRAILING_OPTS = []  # store command line options as list of strings
 _C.TRAINER_NAME = "savi"

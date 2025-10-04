@@ -46,7 +46,7 @@ TASK:
 COLLECT:
   TYPE: "greedy"
   DATA_STRUCT: {"obs":[],"reward":[],"done":[],"action_id":[],"info":[],"map":[],"path_point":[],"sound_id":[]}
-  DATA_DIR: "dataset/pickle/greedy(test_audio_con)" #"pickle/greedy"
+  DATA_DIR: "dataset/pickle/v2/greedy(test)" #"pickle/greedy"
   IMG_DIR: ""
   IMG_TYPE: ""
   

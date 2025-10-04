@@ -46,7 +46,7 @@ TASK:
 COLLECT:
   TYPE: "collided"
   DATA_STRUCT: {"obs":[],"reward":[],"done":[],"action_id":[],"info":[],"greedy_map":[],"collided_map":[],"greedy_path_point":[],"collided_path_point":[],"sound_id":[]}
-  DATA_DIR: "dataset/pickle/collided(test)" #"pickle/collided"
+  DATA_DIR: "dataset/pickle/v2/collided(test)" #"pickle/collided"
   IMG_DIR: ""
   IMG_TYPE: ""
   

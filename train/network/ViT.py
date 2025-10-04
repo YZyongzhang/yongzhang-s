@@ -100,7 +100,7 @@ class VisualEncoder(nn.Module):
         return x_1
     
 class AudioEncoder(nn.Module):
-    def __init__(self,   input_dim = 4, output_dim = 128):
+    def __init__(self,   input_dim = 2, output_dim = 128):
         super().__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -114,7 +114,6 @@ class AudioEncoder(nn.Module):
         
         x_1 = self.conv2d_1(mel_audio)
         # print(x_1.shape)# (batch , 16 , 32 , 16)
-        # import pdb;pdb.set_trace()
         return x_1
     
 
@@ -204,17 +203,17 @@ class ViTEncoder(nn.Module):
         
         self.hidden_dim = 1024
 
-        self.down_dim_1 = nn.Linear(in_features=  96*128 , out_features= self.hidden_dim)
+        self.down_dim_1 = nn.Linear(in_features=  80*128 , out_features= self.hidden_dim)
         self.down_dim_2 = nn.Linear(in_features= self.hidden_dim , out_features= self.hidden_dim // 2)
         self.activate = nn.ReLU()
+
     def forward(self , audio , visual):
 
         audio_encoder , visual_encoder = self.addpostional(audio , visual)
-        
         y = self.vaencode(audio_encoder , visual_encoder)
         
         batch , y_token , y_d_model = y.shape
-        y = y.reshape(batch , y_token * y_d_model) # y_token * y_d_modl = (32+64) * 128
+        y = y.reshape(batch , y_token * y_d_model) # y_token * y_d_modl = (16+64) * 128
         down_y1 = self.activate(self.down_dim_1(y))
         down_y2 = self.down_dim_2(down_y1)
-        return down_y2
+        return down_y2 , audio_encoder , visual_encoder

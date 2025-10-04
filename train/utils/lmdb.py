@@ -4,6 +4,8 @@ from tqdm import tqdm
 import torch
 import numpy as np
 from train import Network
+from train.utils.avtrans import AVtrans
+from utils import turn_angle
 class Transfor:
     def __init__(self , paths:list[str]):
         self.paths = paths
@@ -43,35 +45,51 @@ class Transfor:
                 txn.commit()
                 env.close()
         if kwargs['type'] == "foundation_model_torch_save":
-            files = self.get_files_by_scenes()
+            files = self.get_files_by_scenes(kwargs['step'])
             shard_size = 10000  # 每个 shard 1w 样本
             shard_id = 0
 
-            buffer_visuals, buffer_audios, buffer_actions = [], [], []
+            buffer_visuals, buffer_audios, buffer_actions , buffer_angles = [], [], [] , []
 
             for file in tqdm(files):
                 with open(file, 'rb') as f:
                     data = pickle.load(f)
 
                 obs = data['obs']
+                
+                if "path_point" in data:
+                    path_point = data['path_point']
+                elif "greedy_path_point" in data:
+                    path_point = data['greedy_path_point']
+                else:
+                    print(f"file name is {file}")
+                    continue
+
+                if np.array(path_point).ndim == 3 and np.array(path_point).shape[0] == 1:
+                    path_point = path_point[0]
+
                 action_id = data['action_id']
                 action_id = np.array(action_id).reshape(-1).tolist()
-                for v, a in zip(obs[:-1], action_id):  
+                sound_position = path_point[-1]
+                for v, a in zip(obs[:-1], action_id):
                     visual = torch.from_numpy(v['rgb']).float() / 255.0
-                    audio = torch.from_numpy(v['spectrogram']).float()
+                    # audio = torch.from_numpy(v['spectrogram'][0]).float()
+                    audio = AVtrans.mel_audio(v['spectrogram'][1])
+                    pose = v['pose']
                     action = torch.tensor(a, dtype=torch.long)
-
+                    angel = torch.tensor(turn_angle(pose , sound_position))
                     buffer_visuals.append(visual)
                     buffer_audios.append(audio)
                     buffer_actions.append(action)
-
+                    buffer_angles.append(angel)
                     # 写一个 shard
                     if len(buffer_visuals) >= shard_size:
                         torch.save({
                             'visuals': torch.stack(buffer_visuals),
                             'audios': torch.stack(buffer_audios),
                             'actions': torch.stack(buffer_actions),
-                        }, f"./dataset/pt/foundation_val/foundation_model_shard_{shard_id}.pt")
+                            'angles':torch.stack(buffer_angles)
+                        }, f"{kwargs['save_dir']}/foundation_model_shard_{shard_id}.pt")
 
                         print(f"保存 shard {shard_id}, size={len(buffer_visuals)}")
 
@@ -84,7 +102,8 @@ class Transfor:
                     'visuals': torch.stack(buffer_visuals),
                     'audios': torch.stack(buffer_audios),
                     'actions': torch.stack(buffer_actions),
-                }, f"./dataset/pt/foundation_val/foundation_model_shard_{shard_id}.pt")
+                    'angles':torch.stack(buffer_angles)
+                }, f"{kwargs['save_dir']}/foundation_model_shard_{shard_id}.pt")
                 print(f"保存 shard {shard_id}, size={len(buffer_visuals)}")
 
         if kwargs['type'] == "offline_rl_embedding_save":
@@ -93,7 +112,7 @@ class Transfor:
             foundation_model.load_state_dict(torch.load('experiment/train/ckpt/model_epoch_600.pth'))
             foundation_model.eval()
             shard_size = 10000
-            save_dir = "dataset/pt/offline/"
+            save_dir = kwargs['save_dir']
             os.makedirs(save_dir, exist_ok=True)
 
             shard_id = 0
@@ -158,13 +177,13 @@ class Transfor:
                 print(f"保存 shard {shard_id}, size={len(buffer_states)})")
 
 
-    def get_files_by_scenes(self):
+    def get_files_by_scenes(self , cut):
         scenes = []
         for path in self.paths:
             scenes.extend([os.path.join(path , i ) for i in os.listdir(path)])
         files = []
         for scene in scenes:
-            files.extend([os.path.join(scene , i ) for i in os.listdir(scene)])
+            files.extend([os.path.join(scene , i ) for i in os.listdir(scene)[:cut]])
         return files
     
     def get_angles_from_path(path_points):
