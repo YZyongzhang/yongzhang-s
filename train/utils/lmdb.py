@@ -57,27 +57,25 @@ class Transfor:
 
                 obs = data['obs']
                 
-                if "path_point" in data:
-                    path_point = data['path_point']
-                elif "greedy_path_point" in data:
-                    path_point = data['greedy_path_point']
-                else:
-                    print(f"file name is {file}")
-                    continue
+                # if "path_point" in data:
+                #     path_point = data['path_point']
+                # elif "greedy_path_point" in data:
+                #     path_point = data['greedy_path_point']
+                # else:
+                #     print(f"file name is {file}")
+                #     continue
 
-                if np.array(path_point).ndim == 3 and np.array(path_point).shape[0] == 1:
-                    path_point = path_point[0]
+                # if np.array(path_point).ndim == 3 and np.array(path_point).shape[0] == 1:
+                #     path_point = path_point[0]
 
                 action_id = data['action_id']
                 action_id = np.array(action_id).reshape(-1).tolist()
-                sound_position = path_point[-1]
                 for v, a in zip(obs[:-1], action_id):
                     visual = torch.from_numpy(v['rgb']).float() / 255.0
                     # audio = torch.from_numpy(v['spectrogram'][0]).float()
                     audio = AVtrans.mel_audio(v['spectrogram'][1])
-                    pose = v['pose']
                     action = torch.tensor(a, dtype=torch.long)
-                    angel = torch.tensor(turn_angle(pose , sound_position))
+                    angel = v['angle']
                     buffer_visuals.append(visual)
                     buffer_audios.append(audio)
                     buffer_actions.append(action)

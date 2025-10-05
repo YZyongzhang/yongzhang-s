@@ -30,10 +30,10 @@ TASK:
   TYPE: SoundEventNav
   SUCCESS_DISTANCE: 1.0
 
-  SENSORS: ['SPECTROGRAM_SENSOR', 'CATEGORY', 'POSE_SENSOR', 'POSE_SENSOR_GD']
+  SENSORS: ['SPECTROGRAM_SENSOR', 'CATEGORY', 'POSE_SENSOR', 'POSE_SENSOR_GD' , 'AngleSensor']
   GOAL_SENSOR_UUID: spectrogram
 
-  MEASUREMENTS: ['DISTANCE_TO_GOAL', 'NORMALIZED_DISTANCE_TO_GOAL', 'SUCCESS', 'SPL', 'SOFT_SPL', 'NUM_ACTION', 'SUCCESS_WEIGHTED_BY_NUM_ACTION', 'SUCCESS_WHEN_SILENT']
+  MEASUREMENTS: ['DISTANCE_TO_GOAL', 'NORMALIZED_DISTANCE_TO_GOAL', 'SUCCESS', 'SPL', 'SOFT_SPL', 'NUM_ACTION', 'SUCCESS_WEIGHTED_BY_NUM_ACTION', 'SUCCESS_WHEN_SILENT',"TOP_DOWN_MAP"]
   SUCCESS:
     SUCCESS_DISTANCE: 1.0
   TOP_DOWN_MAP:
@@ -46,13 +46,13 @@ TASK:
 COLLECT:
   TYPE: "greedy"
   DATA_STRUCT: {"obs":[],"reward":[],"done":[],"action_id":[],"info":[],"map":[],"path_point":[],"sound_id":[]}
-  DATA_DIR: "dataset/pickle/v2/greedy(test)" #"pickle/greedy"
+  DATA_DIR: "dataset/pickle/v2/greedy(val_angle)" #"pickle/greedy"
   IMG_DIR: ""
   IMG_TYPE: ""
   
 DATASET:
   TYPE: "SoundEventNav"
-  SPLIT: "test" #"val" #"train"
+  SPLIT: "val" #"val" #"train"
   CONTENT_SCENES: ["*"]
   VERSION: 'v1'
   SCENES_DIR: "data/scene_datasets/mp3d"

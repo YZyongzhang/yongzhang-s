@@ -303,6 +303,9 @@ _TC.TASK.AUDIOGOAL_SENSOR.TYPE = "SoundEventAudioGoalSensor"
 _TC.TASK.SPECTROGRAM_SENSOR = CN()
 _TC.TASK.SPECTROGRAM_SENSOR.TYPE = "SoundEventSpectrogramSensor"
 # -----------------------------------------------------------------------------
+# ANGLE_SENSOR
+_TC.TASK.AngleSensor = CN()
+_TC.TASK.AngleSensor.TYPE = "AngleSensor"
 # soundspaces
 # -----------------------------------------------------------------------------
 _TC.SIMULATOR.GRID_SIZE = 0.5
