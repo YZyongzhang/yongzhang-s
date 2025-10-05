@@ -1,5 +1,3 @@
-from train import network
-from train import VADE
 from torch.utils.data import DataLoader
 import torch
 import torch.nn as nn
@@ -7,7 +5,6 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torch
 from tqdm import tqdm
-import lmdb
 class Train:
     def __init__(self, model, Adam, dataset,val_dataset, epoch, writer, save_dir , device='cuda'):
         self.train_model = model.to(device)
@@ -43,7 +40,8 @@ class Train:
                 action_predict , angle_predict = self.train_model(batch_audio, batch_visual)
                 loss_action = F.cross_entropy(action_predict, batch_action)
                 loss_angle = F.mse_loss(angle_predict.squeeze(1) , batch_angle)
-                loss = loss_action + 5*loss_angle
+                # loss = loss_action + 5*loss_angle
+                loss = loss_angle
                 self.optimizer.zero_grad()
                 # loss_action.backward(retain_graph=True)
                 # loss_angle.backward()
