@@ -41,11 +41,11 @@ class Train:
                 loss_action = F.cross_entropy(action_predict, batch_action)
                 loss_angle = F.mse_loss(angle_predict.squeeze(1) , batch_angle)
                 # loss = loss_action + 5*loss_angle
-                loss = loss_angle
+                # loss = loss_angle
                 self.optimizer.zero_grad()
-                # loss_action.backward(retain_graph=True)
-                # loss_angle.backward()
-                loss.backward()
+                loss_action.backward(retain_graph=True)
+                loss_angle.backward()
+                # loss.backward()
                 self.optimizer.step()
                 
                 print(f"Epoch {ep}, Step {global_step}, action Loss: {loss_action:.6f} , angle loss {loss_angle:.6f}")
@@ -78,7 +78,7 @@ class Train:
         val_action_loss = 0.0
         val_angle_loss = 0.0
         with torch.no_grad():
-            for batch in self.val_loader:
+            for batch in self.train_loader:
                 if isinstance(batch, (list, tuple)) and len(batch) >= 3:
                     batch_visual, batch_audio, batch_action , batch_angle = batch
                     batch_visual, batch_audio = batch_visual.to(self.device).squeeze(0), batch_audio.to(self.device).squeeze(0)

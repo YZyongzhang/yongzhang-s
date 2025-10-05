@@ -11,9 +11,9 @@ if  __name__ == "__main__":
     model = Network().to(device)
     lr = 1e-4
     optimizer = optim.Adam(model.parameters(), lr=lr)
-    save_dir = './experiment/train/v2/ckpt_foundation_add_val_with_audio_only_angle_loss'
+    save_dir = './experiment/train/v2/ckpt_foundation_add_val_with_audio_only_angle_loss_test'
     os.makedirs(save_dir, exist_ok=True)
-    writer = SummaryWriter(log_dir='./experiment/train/v2/foundation_add_val_with_audio_only_angle_loss')
+    writer = SummaryWriter(log_dir='./experiment/train/v2/foundation_add_val_with_audio_only_angle_loss_test')
     dataset = ShardedPTDataset(shard_pattern="./dataset/pt/v2/foundation_audio_with_angle/foundation_model_shard_*.pt")
     val_dataset = ShardedPTDataset(shard_pattern="./dataset/pt/v2/foundation_audio_with_angle_val/foundation_model_shard_*.pt")
     trainer = Train(
