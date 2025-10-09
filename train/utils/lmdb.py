@@ -5,7 +5,6 @@ import torch
 import numpy as np
 from train import Network
 from train.utils.avtrans import AVtrans
-from utils import turn_angle
 class Transfor:
     def __init__(self , paths:list[str]):
         self.paths = paths
@@ -45,7 +44,7 @@ class Transfor:
                 txn.commit()
                 env.close()
         if kwargs['type'] == "foundation_model_torch_save":
-            files = self.get_files_by_scenes(kwargs['step'])
+            files = self.get_files_by_scenes(kwargs['b_s'] , kwargs['e_s'] , kwargs['b_f'] , kwargs['e_f'])
             shard_size = 10000  # 每个 shard 1w 样本
             shard_id = 0
 
@@ -75,11 +74,11 @@ class Transfor:
                     # audio = torch.from_numpy(v['spectrogram'][0]).float()
                     audio = AVtrans.mel_audio(v['spectrogram'][1])
                     action = torch.tensor(a, dtype=torch.long)
-                    angel = v['angle']
+                    angel = np.degrees(v['angle'][1])
                     buffer_visuals.append(visual)
                     buffer_audios.append(audio)
                     buffer_actions.append(action)
-                    buffer_angles.append(angel)
+                    buffer_angles.append(torch.tensor(angel))
                     # 写一个 shard
                     if len(buffer_visuals) >= shard_size:
                         torch.save({
@@ -175,13 +174,15 @@ class Transfor:
                 print(f"保存 shard {shard_id}, size={len(buffer_states)})")
 
 
-    def get_files_by_scenes(self , cut):
+    def get_files_by_scenes(self , b_s , e_s , b_f , e_f):
         scenes = []
         for path in self.paths:
-            scenes.extend([os.path.join(path , i ) for i in os.listdir(path)])
+            scenes.extend([os.path.join(path , i ) for i in os.listdir(path)[b_s : e_s]])
+        with open('split.txt' , 'w') as f:
+            f.write(f"train/val split is : {scenes}")
         files = []
         for scene in scenes:
-            files.extend([os.path.join(scene , i ) for i in os.listdir(scene)[:cut]])
+            files.extend([os.path.join(scene , i ) for i in os.listdir(scene)[b_f:e_f]])
         return files
     
     def get_angles_from_path(path_points):

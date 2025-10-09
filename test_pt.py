@@ -1,9 +1,9 @@
 from train import Transfor
 import os
 if __name__ == "__main__":
-    paths = ['dataset/pickle/v2/greedy(train_angle)','dataset/pickle/v2/collided(train_angle)']
+    paths = ['dataset/pickle/v2/greedy(train_angle)']
     transfor = Transfor(paths=paths)
-    path = 'dataset/pt/v2/foundation_audio_with_angle_val_v_10_5/' 
+    path = 'dataset/pt/v2/foundation_audio_with_angle_val_train_split_v_10_6/' 
     os.makedirs(path , exist_ok=True)
-    transfor.to_lmdb(type = 'foundation_model_torch_save' , save_dir = path , step = 50)
+    transfor.to_lmdb(type = 'foundation_model_torch_save' , save_dir = path , b_s = 50 , e_s = 61 ,b_f = 0 , e_f = 100)
 

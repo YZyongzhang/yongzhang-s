@@ -114,38 +114,38 @@ def draw_map(env, path_points):
 
 #     return img_np
 
-def display_path_map(topdown_map, env):
+# def display_path_map(topdown_map, env):
 
-    img = topdown_map
-    sim = env._env._sim
-    yaw = (yaw + 360) % 360
-    agent_rot = sim.get_agent_state().rotation
-    agent_position = sim.get_agent_state().position
-    top_down_map = maps.draw_agent(
-        top_down_map, agent_position, yaw, agent_radius_px=8
-    )
-    # 如果是灰度图，转为三通道方便画彩色
-    if len(img.shape) == 2 or img.shape[2] == 1:
-        img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+#     img = topdown_map
+#     sim = env._env._sim
+#     yaw = (yaw + 360) % 360
+#     agent_rot = sim.get_agent_state().rotation
+#     agent_position = sim.get_agent_state().position
+#     top_down_map = maps.draw_agent(
+#         top_down_map, agent_position, yaw, agent_radius_px=8
+#     )
+#     # 如果是灰度图，转为三通道方便画彩色
+#     if len(img.shape) == 2 or img.shape[2] == 1:
+#         img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
     
-    # 绘制路径
-    if path is not None and len(path) > 1:
-        # 画线段
-        for i in range(len(path) - 1):
-            p1 = tuple(map(int, path[i]))
-            p2 = tuple(map(int, path[i + 1]))
-            cv2.line(img, p1, p2, (139, 0, 0), thickness=5)  # 深蓝线
-        # 起点终点标记
-        cv2.circle(img, tuple(map(int, path[0])), 6, (255, 255, 0), -1)  # 起点：黄
-        cv2.circle(img, tuple(map(int, path[-1])), 6, (255, 0, 0), -1)   # 终点：蓝
+#     # 绘制路径
+#     if path is not None and len(path) > 1:
+#         # 画线段
+#         for i in range(len(path) - 1):
+#             p1 = tuple(map(int, path[i]))
+#             p2 = tuple(map(int, path[i + 1]))
+#             cv2.line(img, p1, p2, (139, 0, 0), thickness=5)  # 深蓝线
+#         # 起点终点标记
+#         cv2.circle(img, tuple(map(int, path[0])), 6, (255, 255, 0), -1)  # 起点：黄
+#         cv2.circle(img, tuple(map(int, path[-1])), 6, (255, 0, 0), -1)   # 终点：蓝
 
-    # 绘制关键点
-    if key_points is not None:
-        for pt in key_points:
-            cv2.circle(img, tuple(map(int, pt)), 8, (0, 0, 255), -1)  # 红色关键点
+#     # 绘制关键点
+#     if key_points is not None:
+#         for pt in key_points:
+#             cv2.circle(img, tuple(map(int, pt)), 8, (0, 0, 255), -1)  # 红色关键点
 
-    return img
+#     return img
 
 def plot_top_down_map(info, dataset='mp3d', pred=None):
     top_down_map = info["top_down_map"]["map"]
