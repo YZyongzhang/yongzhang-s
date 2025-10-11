@@ -6,3 +6,4 @@ experiment/
 *.png
 *.pkl
 *.txt
+*.fuse_hidden*
