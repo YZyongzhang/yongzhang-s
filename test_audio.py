@@ -14,7 +14,7 @@ if  __name__ == "__main__":
     optimizer = optim.Adam(model.parameters(), lr=lr ,  weight_decay=1e-4)
     save_dir = './experiment/train/v2/ckpt_foundation_train_split_v_10_6'
     os.makedirs(save_dir, exist_ok=True)
-    writer = SummaryWriter(log_dir='./experiment/train/v2/loss_audio_and_scale_5')
+    writer = SummaryWriter(log_dir='./experiment/train/v2/loss_audio_and_scale_6')
     dataset = ShardedPTDataset(shard_pattern="./dataset/pt/v2/foundation_spectmel/foundation_model_shard_*.pt")
     val_dataset = ShardedPTDataset(shard_pattern="./dataset/pt/v2/foundation_spectmel_val/foundation_model_shard_*.pt")
     trainer = Train(

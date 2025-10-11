@@ -8,7 +8,35 @@ import torch
 from tqdm import tqdm
 from utils.log import logger
 import numpy as np
+import math
+NUM_SECTORS = 8
+SECTOR_ANGLE = 2 * 180 / NUM_SECTORS  # 每个扇区角度
+class DirectionLoss(nn.Module):
+    def __init__(self, num_sectors=NUM_SECTORS):
+        super().__init__()
+        self.num_sectors = num_sectors
+        self.ce_loss = nn.CrossEntropyLoss()
 
+    def forward(self, sector_logits, true_angle):
+        """
+        sector_logits: [B, num_sectors] 分类 logits
+        delta_pred: [B] 微调预测, 单位 rad
+        true_angle: [B] 真值角度, 单位 rad
+        """
+        # -------------------
+        # 1. 分类标签
+        # -------------------
+        # 将真实角度映射到扇区索引
+
+        sector_label = torch.remainder(true_angle + 180, 2*180) // SECTOR_ANGLE
+        sector_label = sector_label.long()
+
+        # -------------------
+        # 2. 分类 loss
+        # -------------------
+        loss_ce = self.ce_loss(sector_logits, sector_label)
+
+        return loss_ce , sector_label
 class Train:
     def __init__(self, model, Adam, dataset,val_dataset, epoch, writer, save_dir , device='cuda'):
         self.train_model: AudioCRNN = model.to(device)
@@ -22,6 +50,7 @@ class Train:
         print(self.dataset.__len__())
         self.train_loader = DataLoader(self.dataset, batch_size=64, shuffle=True)
         self.val_loader = DataLoader(self.val_dataset, batch_size=64, shuffle=True)
+        self.losser = DirectionLoss()
 
     def deal_batch_angle(self , batch_angle):
         # batch_angle: (batch , 1)
@@ -37,6 +66,12 @@ class Train:
     # def guss(self , angle , lable):
     #     error = lable - angle
     #     loss = 
+    def bounded_mse_loss(self , pred, target, tol=30):  # 容忍 ±30°
+        diff = torch.remainder(pred - target + 180.0, 360.0) - 180.0
+        # 超出容忍区间的才计算惩罚
+        penalty = torch.clamp(torch.abs(diff) - tol, min=0.0)
+        return torch.mean(penalty ** 2)
+
     def train(self):
         global_step = 0
 
@@ -58,7 +93,9 @@ class Train:
                 # import pdb;pdb.set_trace()
                 angle_predict = self.train_model(batch_audio)
                 # error = self.angle_error(angle_predict.squeeze(1) , batch_angle)
-                loss_angle = F.mse_loss(angle_predict.squeeze(1) , batch_angle)
+                # loss_angle = F.mse_loss(angle_predict.squeeze(1) , batch_angle)
+                # loss_angle = self.bounded_mse_loss(angle_predict , batch_angle)
+                loss_angle , label  = self.losser(angle_predict , batch_angle)
                 # loss_angle = self.compute_loss_by_guss(angle_predict , batch_angle)
                 # loss = loss_angle
                 self.optimizer.zero_grad()
@@ -91,6 +128,8 @@ class Train:
         self.train_model.eval()
         total = 0
         val_angle_loss = 0.0
+        total_acc = 0.0
+        correct = 0
         with torch.no_grad():
             for batch in self.val_loader:
                 if isinstance(batch, (list, tuple)) and len(batch) >= 3:
@@ -101,17 +140,20 @@ class Train:
                     raise ValueError("验证数据格式不正确，应为 (visual, audio, label) 三元组")
                 # batch_angle = self.deal_batch_angle(batch_angle).float().to(self.device)
                 angle_predict = self.train_model(batch_audio)
-                angle_loss = F.mse_loss(angle_predict.squeeze(1) , batch_angle)
+                # angle_loss = F.mse_loss(angle_predict.squeeze(1) , batch_angle)
+                # angle_loss = self.bounded_mse_loss(angle_predict , batch_angle)
+                angle_loss ,label = self.losser(angle_predict , batch_angle)
 
                 val_angle_loss += angle_loss.item()
-   
+                preds = angle_predict.argmax(dim=1)  # [batch]
+                correct += (preds == label).sum().item()
 
 
         avg_angle_loss = val_angle_loss / len(self.val_loader)
-
+        total_acc = correct / self.val_dataset.__len__()
 
         if self.writer:
             self.writer.add_scalar("Val/angle_loss", avg_angle_loss, step)
-
+            self.writer.add_scalar("Val/acc", total_acc, step)
         self.train_model.train()
 

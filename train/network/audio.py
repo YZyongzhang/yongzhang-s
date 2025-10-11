@@ -67,8 +67,8 @@ class AudioCRNN(nn.Module):
             nn.ReLU(True),
             nn.Linear(128, 64),
             nn.ReLU(True),
-            nn.Linear(64, 1),
-            nn.Tanh()
+            nn.Linear(64, 8),
+            # nn.Tanh()
         )
     
         layer_init(self.cnn)
@@ -82,5 +82,5 @@ class AudioCRNN(nn.Module):
 
         x = x.squeeze(1)
         x = self.fnn(x)
-        x = x*180
+        # x = x*180
         return x
