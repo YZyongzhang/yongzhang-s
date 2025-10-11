@@ -71,8 +71,8 @@ class Transfor:
                 action_id = np.array(action_id).reshape(-1).tolist()
                 for v, a in zip(obs[:-1], action_id):
                     visual = torch.from_numpy(v['rgb']).float() / 255.0
-                    # audio = torch.from_numpy(v['spectrogram'][0]).float()
-                    audio = AVtrans.mel_audio(v['spectrogram'][1])
+                    audio = torch.from_numpy(v['spectrogram'][0]).float()
+                    # audio = AVtrans.mel_audio(v['spectrogram'][1])
                     action = torch.tensor(a, dtype=torch.long)
                     angel = np.degrees(v['angle'][1])
                     buffer_visuals.append(visual)

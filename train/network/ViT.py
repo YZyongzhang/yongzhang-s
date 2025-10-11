@@ -2,7 +2,12 @@ import torch
 import torch.nn as nn
 import torch.functional as F
 from train.network.Encoder import Encoder
-
+def layer_init(cnn):
+    for layer in cnn:
+        if isinstance(layer, (nn.Conv2d, nn.Linear)):
+            nn.init.kaiming_normal_(layer.weight, nn.init.calculate_gain("relu"))
+            if layer.bias is not None:
+                nn.init.constant_(layer.bias, val=0)
 class PositionalEcoder(nn.Module):
     def __init__(self, max_len = 10000, d_models = 128 , device = None):
         super().__init__()
@@ -91,7 +96,7 @@ class VisualEncoder(nn.Module):
         # 图片shape （3 ， 256 ， 256）
 
         self.conv2d_1 = nn.Conv2d(in_channels=self.input_dim , out_channels= self.output_dim, kernel_size= self.kernel_size , stride=self.kernel_size)
-
+        layer_init([self.conv2d_1])
     def forward(self, visual):
         # pdb.set_trace()
         x_1 = self.conv2d_1(visual)
@@ -100,13 +105,13 @@ class VisualEncoder(nn.Module):
         return x_1
     
 class AudioEncoder(nn.Module):
-    def __init__(self,   input_dim = 2, output_dim = 128):
+    def __init__(self,   input_dim = 4, output_dim = 128):
         super().__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
 
         self.conv2d_1 = nn.Conv2d(in_channels=self.input_dim , out_channels= self.output_dim, kernel_size=16 , stride=16 , padding=1)
-
+        layer_init([self.conv2d_1])
     def forward(self, mel_audio):
         # mel_audio = self._deal_audio(audio)
         
@@ -148,10 +153,10 @@ class AddPostional(nn.Module):
 class VAEncode(nn.Module):
     def __init__(self):
         super().__init__()
-        self.visual_transformer_encoder = Encoder(d_model=128 , ffn_hidden=64,n_head=8,n_layers=6,drop_prob=0.2)
+        self.visual_transformer_encoder = Encoder(d_model=128 , ffn_hidden=64,n_head=16,n_layers=8,drop_prob=0.2)
         # 根据音频的实际形状进行调整d_model参数
-        self.audio_transformer_encoder = Encoder(d_model=128 , ffn_hidden=64,n_head=8,n_layers=6,drop_prob=0.2)
-        self.share_visual_audio_encoder = Encoder(d_model=128 , ffn_hidden=64,n_head=8,n_layers=6,drop_prob=0.2)
+        self.audio_transformer_encoder = Encoder(d_model=128 , ffn_hidden=64,n_head=16,n_layers=8,drop_prob=0.2)
+        self.share_visual_audio_encoder = Encoder(d_model=128 , ffn_hidden=64,n_head=16,n_layers=8,drop_prob=0.2)
 
     def forward(self ,audio , visual):
         visual_x = self.visual_transformer_encoder(visual)
@@ -203,7 +208,7 @@ class ViTEncoder(nn.Module):
         
         self.hidden_dim = 1024
 
-        self.down_dim_1 = nn.Linear(in_features=  80*128 , out_features= self.hidden_dim)
+        self.down_dim_1 = nn.Linear(in_features=  96*128 , out_features= self.hidden_dim)
         self.down_dim_2 = nn.Linear(in_features= self.hidden_dim , out_features= self.hidden_dim // 2)
         self.activate = nn.ReLU()
 
@@ -213,7 +218,7 @@ class ViTEncoder(nn.Module):
         y = self.vaencode(audio_encoder , visual_encoder)
         
         batch , y_token , y_d_model = y.shape
-        y = y.reshape(batch , y_token * y_d_model) # y_token * y_d_modl = (16+64) * 128
+        y = y.reshape(batch , y_token * y_d_model) # y_token * y_d_modl = (16+64) / 96 * 128
         down_y1 = self.activate(self.down_dim_1(y))
         down_y2 = self.down_dim_2(down_y1)
         return down_y2 , audio_encoder , visual_encoder
