@@ -1,4 +1,3 @@
-from train.network.audio import AudioCRNN
 from torch.utils.data import DataLoader
 import torch
 import torch.nn as nn

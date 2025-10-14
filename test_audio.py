@@ -1,4 +1,3 @@
-from train.network.audio import AudioCRNN
 from torch.utils.tensorboard import SummaryWriter
 import torch
 import torch.optim as optim
@@ -15,8 +14,8 @@ if  __name__ == "__main__":
     save_dir = './experiment/train/v4/audio_2'
     os.makedirs(save_dir, exist_ok=True)
     writer = SummaryWriter(log_dir='./experiment/train/v4/audio_2')
-    dataset = ShardedPTDataset(shard_pattern="./dataset/pt/v3/angle_audio_std_40k/foundation_model_shard_*.pt")
-    val_dataset = ShardedPTDataset(shard_pattern="./dataset/pt/v3/angle_audio_std_40k_val/foundation_model_shard_*.pt")
+    dataset = ShardedPTDataset(shard_pattern="./dataset/pt/v3/angle_audio_std_40k/foundation_model_shard_0.pt")
+    val_dataset = ShardedPTDataset(shard_pattern="./dataset/pt/v3/angle_audio_std_40k_val/foundation_model_shard_0.pt")
     trainer = Train(
         model=model,
         Adam=optimizer,
