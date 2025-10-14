@@ -29,5 +29,5 @@ class AVtrans:
 
         mel_spec = np.stack([mel_spec_left, mel_spec_right], axis=0)
         audio_tensor = torch.tensor(mel_spec, dtype=torch.float32)
-
-        return audio_tensor
+        std_audio = (audio_tensor - audio_tensor.mean()) / (audio_tensor.std() + 1e-6)
+        return  std_audio

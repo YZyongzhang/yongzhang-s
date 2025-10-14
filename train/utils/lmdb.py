@@ -5,6 +5,7 @@ import torch
 import numpy as np
 from train import Network
 from train.utils.avtrans import AVtrans
+import random
 class Transfor:
     def __init__(self , paths:list[str]):
         self.paths = paths
@@ -43,6 +44,56 @@ class Transfor:
                 txn.put(key , len_)
                 txn.commit()
                 env.close()
+        if kwargs['type'] == "foundation_model_torch_save_40k":
+            files = self.get_files_by_scenes(kwargs['b_s'] , kwargs['e_s'] , kwargs['b_f'] , kwargs['e_f'])
+            shard_size = 10000  # 每个 shard 1w 样本
+            shard_id = 0
+
+            buffer_visuals, buffer_audios, buffer_actions , buffer_angles = [], [], [] , []
+            for file in tqdm(files):
+                with open(file, 'rb') as f:
+                    data = pickle.load(f)
+
+                obs = data['obs']
+
+                action_id = data['action_id']
+                action_id = np.array(action_id).reshape(-1).tolist()
+                for v, a in zip(obs[:-1], action_id):
+                    episilon = random.random()
+                    if episilon > 0.4:
+                        continue
+                    visual = torch.from_numpy(v['rgb']).float() / 255.0
+                    # audio = torch.from_numpy(v['spectrogram'][0]).float()
+                    audio = AVtrans.mel_audio(v['spectrogram'][1])
+                    action = torch.tensor(a, dtype=torch.long)
+                    angel = np.degrees(v['angle'][1])
+                    buffer_visuals.append(visual)
+                    buffer_audios.append(audio)
+                    buffer_actions.append(action)
+                    buffer_angles.append(torch.tensor(angel))
+                    # 写一个 shard
+                    if len(buffer_visuals) >= shard_size:
+                        torch.save({
+                            'visuals': torch.stack(buffer_visuals),
+                            'audios': torch.stack(buffer_audios),
+                            'actions': torch.stack(buffer_actions),
+                            'angles':torch.stack(buffer_angles)
+                        }, f"{kwargs['save_dir']}/foundation_model_shard_{shard_id}.pt")
+
+                        print(f"保存 shard {shard_id}, size={len(buffer_visuals)}")
+
+                        buffer_visuals, buffer_audios, buffer_actions = [], [], []
+                        shard_id += 1
+
+            # 保存最后一个不满 shard 的数据
+            if buffer_visuals:
+                torch.save({
+                    'visuals': torch.stack(buffer_visuals),
+                    'audios': torch.stack(buffer_audios),
+                    'actions': torch.stack(buffer_actions),
+                    'angles':torch.stack(buffer_angles)
+                }, f"{kwargs['save_dir']}/foundation_model_shard_{shard_id}.pt")
+                print(f"保存 shard {shard_id}, size={len(buffer_visuals)}")
         if kwargs['type'] == "foundation_model_torch_save":
             files = self.get_files_by_scenes(kwargs['b_s'] , kwargs['e_s'] , kwargs['b_f'] , kwargs['e_f'])
             shard_size = 10000  # 每个 shard 1w 样本
@@ -71,8 +122,8 @@ class Transfor:
                 action_id = np.array(action_id).reshape(-1).tolist()
                 for v, a in zip(obs[:-1], action_id):
                     visual = torch.from_numpy(v['rgb']).float() / 255.0
-                    audio = torch.from_numpy(v['spectrogram'][0]).float()
-                    # audio = AVtrans.mel_audio(v['spectrogram'][1])
+                    # audio = torch.from_numpy(v['spectrogram'][0]).float()
+                    audio = AVtrans.mel_audio(v['spectrogram'][1])
                     action = torch.tensor(a, dtype=torch.long)
                     angel = np.degrees(v['angle'][1])
                     buffer_visuals.append(visual)

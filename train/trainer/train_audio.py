@@ -9,6 +9,7 @@ from tqdm import tqdm
 from utils.log import logger
 import numpy as np
 import math
+import pickle
 NUM_SECTORS = 8
 SECTOR_ANGLE = 2 * 180 / NUM_SECTORS  # 每个扇区角度
 class DirectionLoss(nn.Module):
@@ -50,6 +51,8 @@ class Train:
         print(self.dataset.__len__())
         self.train_loader = DataLoader(self.dataset, batch_size=64, shuffle=True)
         self.val_loader = DataLoader(self.val_dataset, batch_size=64, shuffle=True)
+        with open('val_loader.pkl' , 'wb') as f:
+            pickle.dump(self.val_loader , f)
         self.losser = DirectionLoss()
 
     def deal_batch_angle(self , batch_angle):
@@ -101,18 +104,20 @@ class Train:
                 self.optimizer.zero_grad()
                 loss_angle.backward()
                 self.optimizer.step()
-                
+                preds = angle_predict.argmax(dim=1)
+                correct = (preds == label).sum() / batch_angle.shape[0]
                 print(f"Epoch {ep}, Step {global_step} , angle loss {loss_angle:.6f}")
                 epoch_angle_loss += loss_angle.item()
 
                 if self.writer:
                     self.writer.add_scalar("Loss/step_angle", loss_angle.item(), global_step)
+                    self.writer.add_scalar("Loss/step_acc" , correct , global_step)
                 global_step += 1
                 local_step += 1
 
                 # if global_step % 500 == 0:
                 #     self.validate(global_step)
-            self.validate(global_step)
+            self.validate(ep)
 
 
             avg_angle_loss = epoch_angle_loss / local_step
@@ -143,7 +148,7 @@ class Train:
                 # angle_loss = F.mse_loss(angle_predict.squeeze(1) , batch_angle)
                 # angle_loss = self.bounded_mse_loss(angle_predict , batch_angle)
                 angle_loss ,label = self.losser(angle_predict , batch_angle)
-
+                
                 val_angle_loss += angle_loss.item()
                 preds = angle_predict.argmax(dim=1)  # [batch]
                 correct += (preds == label).sum().item()

@@ -105,7 +105,7 @@ class VisualEncoder(nn.Module):
         return x_1
     
 class AudioEncoder(nn.Module):
-    def __init__(self,   input_dim = 4, output_dim = 128):
+    def __init__(self,   input_dim = 2, output_dim = 128):
         super().__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim

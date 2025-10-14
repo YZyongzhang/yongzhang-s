@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import transforms
 from torch.utils.data import Dataset , DataLoader
-from train.network.ViT import ViTEncoder
+from train.network.ViT import ViTEncoder , AudioEncoder
 
 def layer_init(cnn):
     for layer in cnn:
@@ -69,27 +69,49 @@ class Attention(nn.Module):
 #         return x
 
 class AnglePredictor(nn.Module):
-    def __init__(self, hidden_dim):
+    def __init__(self, hidden_dim = 128):
         super().__init__()
-
+        self.audio_encoder = AudioEncoder()
         self.fc1 = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(32*128 , hidden_dim),
+            nn.Linear(16*128 , hidden_dim),
+            nn.LayerNorm(hidden_dim),
             nn.ReLU()
         )
         self.dropout = nn.Dropout(0.2)
         self.fc2 = nn.Sequential(
             nn.Linear(hidden_dim, 64),
+            nn.LayerNorm(64),
             nn.ReLU(),
-            nn.Linear(64, 1)
+            nn.Linear(64, 8)
         )
+        # self.fc = nn.Sequential(
+        #     nn.Flatten(),
+        #     nn.Linear(16*128 , hidden_dim),
+        #     nn.ReLU(),
+        #     nn.Linear(128 , 64),
+        #     nn.ReLU(),
+        #     nn.Linear(64 , 8)
+        # )
         layer_init(self.fc1)
         layer_init(self.fc2)
+
     def forward(self, x):
         # x: [batch, seq_len, hidden_dim]
         # 简单平均池化
+        x = self.audio_encoder(x)
         x1 = self.dropout(self.fc1(x))
-        return self.fc2(x1)
+        x2 = self.fc2(x1)
+        return x2
+    
+    # def forward(self, x):
+    #     # x: [batch, seq_len, hidden_dim]
+    #     # 简单平均池化
+    #     std_x = (x - x.mean()) / (x.std() + 1e-6)
+    #     x = self.audio_encoder(std_x)
+    #     f_x = self.fc1[0](x)
+    #     x1 = self.fc1[1](f_x)
+    #     return x , x1 
     
 class Finnal_model(nn.Module):
     def __init__(self,input_dim , hidden_dim , output_dim):
@@ -99,7 +121,7 @@ class Finnal_model(nn.Module):
         self.output_dim = output_dim
         
         self.dropout = nn.Dropout(0.2)
-
+        
         self.fc1 = nn.Linear(self.input_dim , self.hidden_dim)
         self.fc2 = nn.Linear(self.hidden_dim, self.output_dim)
         layer_init([self.fc1])
@@ -139,3 +161,4 @@ class Network(nn.Module):
         avencoder= self.vitpartnet(audio , visual)
         attentioned = self.attention(avencoder)
         return attentioned
+    
